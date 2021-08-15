@@ -1,0 +1,12 @@
+[development]
+keep_alive = 5
+read_timeout = 5
+write_timeout = 5
+log = "normal"
+
+# [production]
+
+[global.tls]
+certs = "/etc/letsencrypt/live/api.audymus.ml/cert.pem"
+key = "/etc/letsencrypt/live/api.audymus.ml/privkey.pem"
+
