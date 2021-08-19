@@ -5,6 +5,7 @@ write_timeout = 5
 log = "normal"
 
 # [production]
+# secret_key = "fadsfasd"
 
 [global.tls]
 certs = "/etc/letsencrypt/live/api.audymus.ml/cert.pem"

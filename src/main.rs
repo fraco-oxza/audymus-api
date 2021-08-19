@@ -5,11 +5,32 @@ extern crate rocket;
 
 use std::collections::HashMap;
 
+use dotenv::dotenv;
+use rocket::fairing::{Fairing, Info, Kind};
+use rocket::http::Header;
+use rocket::{Request, Response};
 use rocket_contrib::databases::mysql;
 use rocket_contrib::databases::mysql::params;
 use rocket_contrib::json::Json;
 
 use audymus_api::*;
+
+pub struct CORS;
+
+impl Fairing for CORS {
+    fn info(&self) -> Info {
+        Info {
+            name: "Add CORS headers to responses",
+            kind: Kind::Response,
+        }
+    }
+    fn on_response(&self, _request: &Request, response: &mut Response) {
+        response.set_header(Header::new("Access-Control-Allow-Origin", "*")); //TODO: Change this value
+        response.set_header(Header::new("Access-Control-Allow-Methods", "POST, GET"));
+        response.set_header(Header::new("Access-Control-Allow-Headers", "*"));
+        response.set_header(Header::new("Access-Control-Allow-Credentials", "true"));
+    }
+}
 
 #[get("/")]
 fn index() -> Json<HashMap<&'static str, &'static str>> {
@@ -63,8 +84,10 @@ fn certbot_challenge() -> &'static str {
 }
 
 fn main() {
+    dotenv().ok();
     rocket::ignite()
         .attach(db::AudymusDbConn::fairing())
+        .attach(CORS)
         .mount("/", routes![get_songs, add_song, certbot_challenge, index])
         .launch();
 }
