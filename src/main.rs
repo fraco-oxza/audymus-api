@@ -8,6 +8,7 @@ use std::collections::HashMap;
 use dotenv::dotenv;
 use rocket::fairing::{Fairing, Info, Kind};
 use rocket::http::Header;
+use rocket::response::status;
 use rocket::{Request, Response};
 use rocket_contrib::databases::mysql;
 use rocket_contrib::databases::mysql::params;
@@ -26,7 +27,10 @@ impl Fairing for CORS {
     }
     fn on_response(&self, _request: &Request, response: &mut Response) {
         response.set_header(Header::new("Access-Control-Allow-Origin", "*")); //TODO: Change this value
-        response.set_header(Header::new("Access-Control-Allow-Methods", "POST, GET"));
+        response.set_header(Header::new(
+            "Access-Control-Allow-Methods",
+            "POST, GET, OPTIONS",
+        ));
         response.set_header(Header::new("Access-Control-Allow-Headers", "*"));
         response.set_header(Header::new("Access-Control-Allow-Credentials", "true"));
     }
@@ -78,6 +82,11 @@ fn add_song(mut conn: db::AudymusDbConn, song: Json<db::InsertableSong>) {
     }
 }
 
+#[options("/songs")]
+fn preflight() -> status::NoContent {
+    status::NoContent
+}
+
 #[get("/.well-known/acme-challenge/giJlK7g_yXzo761peP-_UbBM_0COky3XcbC4r5TSDyg")]
 fn certbot_challenge() -> &'static str {
     "giJlK7g_yXzo761peP-_UbBM_0COky3XcbC4r5TSDyg.NzcYVQ2wdRYkaewHWZjUhrStm5BrF6yodFhE9cXjLgE"
@@ -88,6 +97,9 @@ fn main() {
     rocket::ignite()
         .attach(db::AudymusDbConn::fairing())
         .attach(CORS)
-        .mount("/", routes![get_songs, add_song, certbot_challenge, index])
+        .mount(
+            "/",
+            routes![get_songs, add_song, certbot_challenge, index, preflight],
+        )
         .launch();
 }
