@@ -67,6 +67,33 @@ fn get_songs(mut conn: db::AudymusDbConn) -> Json<Vec<db::Song>> {
     return Json(selected_sounds);
 }
 
+#[get("/search/<string>")]
+fn song_search(mut conn: db::AudymusDbConn, string: String) -> Json<Vec<db::Song>> {
+    let selected_sounds = conn.prep_exec(
+        format!("SELECT * FROM song WHERE name LIKE \'%{}%\'", string),
+        (),
+    );
+
+    let selected_sounds: Vec<db::Song> = selected_sounds
+        .map(|result| {
+            result
+                .map(|x| x.unwrap())
+                .map(|row| {
+                    let (id, name, link, image) = mysql::from_row(row);
+                    db::Song {
+                        id,
+                        name,
+                        link,
+                        image,
+                    }
+                })
+                .collect()
+        })
+        .unwrap();
+
+    return Json(selected_sounds);
+}
+
 #[post("/songs", data = "<song>")]
 fn add_song(mut conn: db::AudymusDbConn, song: Json<db::InsertableSong>) {
     for mut stmt in conn
@@ -99,7 +126,14 @@ fn main() {
         .attach(CORS)
         .mount(
             "/",
-            routes![get_songs, add_song, certbot_challenge, index, preflight],
+            routes![
+                get_songs,
+                add_song,
+                certbot_challenge,
+                index,
+                preflight,
+                song_search
+            ],
         )
         .launch();
 }
